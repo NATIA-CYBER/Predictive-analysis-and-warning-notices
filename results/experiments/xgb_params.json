@@ -1,0 +1,12 @@
+{
+  "n_estimators": 500,
+  "max_depth": 4,
+  "learning_rate": 0.05,
+  "subsample": 0.9,
+  "colsample_bytree": 0.9,
+  "reg_lambda": 1.0,
+  "n_jobs": 4,
+  "tree_method": "hist",
+  "scale_pos_weight": 5.022601707684581,
+  "random_state": 42
+}

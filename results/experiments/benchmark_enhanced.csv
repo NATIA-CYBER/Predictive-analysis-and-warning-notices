@@ -1,0 +1,7 @@
+model_variant,threshold,precision,recall,f1_score,total_cost,cost_reduction_pct
+XGB_Baseline,0.2323,0.9795,0.9854,0.9825,331,0.0
+XGB_CostSensitive,0.7475,0.6824,0.9714,0.8017,1470,-344.1
+XGB_Calibrated,0.0707,0.8001,0.9488,0.8681,1492,-350.8
+LogReg_Baseline,0.101,0.2933,0.9166,0.4444,6058,-1730.2
+Fusion_Naive,0.1919,0.9309,0.994,0.9614,267,19.3
+Fusion_Learned,0.3838,0.9101,0.9764,0.9421,662,-100.0

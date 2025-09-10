@@ -2,19 +2,37 @@
 
 Early-warning HR tool for employee attrition and department-level risk spikes.
 
-## Quickstart
+## Platform Setup & Running
 
+### Prerequisites
+1. Download `HR_comma_sep.csv` from Kaggle and place in `data/raw/`
+2. Ensure conda/miniconda is installed
+
+### Quick Start
 ```bash
+# Setup environment
 conda env create -f environment.yml
 conda activate pawn
-make eda
-make features
-make train_xgb
-make train_iforest
-make eval
-make bench
-make dashboard
+
+# Run full pipeline
+make eda         # EDA analysis and plots
+make features    # Feature engineering
+make train_xgb   # Train XGBoost models
+make train_iforest # Train anomaly detection
+make eval        # Model evaluation
+make bench       # Benchmark comparison
+make dashboard   # Launch Streamlit dashboard
+
+# Individual components
+python scripts/stream_demo.py        # Real-time streaming demo
+python scripts/bias_monitoring.py   # Fairness assessment
+python scripts/security_audit.py    # Security evaluation
 ```
+
+### Dashboard Access
+After running `make dashboard`, access the platform at:
+- **URL**: http://localhost:8501
+- **Features**: DPI Leaderboard, Model Benchmarks, Analysis Plots, Data Explorer
 
 ## What it does
 
@@ -29,17 +47,43 @@ PAWN predicts employee attrition using supervised learning (XGBoost + Logistic R
 5. **Benchmark**: Compare all models on precision, recall, F1-score
 6. **Dashboard**: Streamlit interface showing results and DPI leaderboard
 
+## Model Architecture
+
+### Baseline Models (Production-Ready)
+- `models/baseline/xgb_baseline.json` - Simple XGBoost classifier
+- `models/baseline/logreg_baseline.joblib` - Logistic regression with scaling
+- `models/baseline/fusion_naive_weights.npy` - Fixed 70/30 ensemble weights
+
+### Enhanced Models (Experimental)
+- `models/enhanced/xgb_cost_sensitive.json` - Cost-aware XGBoost with monotonic constraints
+- `models/enhanced/xgb_calibrated.joblib` - Probability calibration using isotonic regression
+- `models/enhanced/fusion_learned.joblib` - Meta-model logistic regression fusion
+- `models/enhanced/fusion_scaler.joblib` - Feature scaling for meta-model
+
+### Shared Models
+- `models/iforest_dept.joblib` - Department-level anomaly detection
+
 ## Artifacts
 
-- **Plots**: `figs/class_balance.png`, `figs/anomaly_rate.png`, `figs/xgb_convergence.png`
+- **Plots**: `figs/class_balance.png`, `figs/anomaly_rate.png`, `figs/xgb_convergence.png`, `figs/xgb_calibration.png`, `figs/perm_importance.png`, `figs/pdp_hours_satisfaction.png`
 - **Data**: `data/silver/hr_silver.parquet`, `data/gold/hr_emp_gold.parquet`, `data/gold/hr_dept_gold.parquet`
-- **Models**: `models/xgb.json`, `models/logreg.joblib`, `models/iforest_dept.joblib`
-- **Results**: `results/experiments/benchmark.csv`, `results/experiments/last_metrics.json`, `results/experiments/dpi_leaderboard.csv`
+- **Results**: `results/experiments/benchmark.csv`, `results/experiments/benchmark_enhanced.csv`, `results/experiments/model_analysis_report.md`, `results/experiments/last_metrics.json`, `results/experiments/dpi_leaderboard.csv`
 
 ## Performance
 
-- **Fused Model**: 93.1% precision, 99.4% recall, 96.1% F1-score
+### Best Model: Fusion_Naive (19.3% cost reduction)
+- **Precision**: 93.1%, **Recall**: 99.4%, **F1-Score**: 96.1%
 - **Optimal Threshold**: 0.1919 (cost-aware for 10:1 FN penalty)
+- **Total Cost**: 267 (vs 331 baseline)
+
+### Model Comparison Summary
+| Model | Cost Reduction | F1-Score | Notes |
+|-------|----------------|----------|--------|
+| Fusion_Naive | **+19.3%** | 0.9614 | **Production Ready** |
+| XGB_Baseline | 0.0% | 0.9825 | Reference baseline |
+| XGB_CostSensitive | -344.1% | 0.8017 | Needs tuning |
+| Fusion_Learned | -100.0% | 0.9421 | Experimental |
+
 - **Top Department**: R&D (DPI: 0.495)
 ---
 
@@ -62,24 +106,17 @@ The CSV has no timestamps; the code **synthesizes a weekly `weekly_ts`** from ro
 
 ---
 
-## Quickstart
+## Ethics & Security Framework
 
-```bash
-# 0) Prereq: put the Kaggle CSV in data/raw/
-#    data/raw/HR_comma_sep.csv
+### Implemented Safeguards
+- **Bias Monitoring**: Automated fairness assessment across departments and salary levels
+- **Security Auditing**: Comprehensive cybersecurity evaluation and recommendations  
+- **Privacy Protection**: GDPR/CCPA compliance framework with data minimization
+- **Transparency**: Model explainability and decision audit trails
 
-# 1) Create the Conda environment
-conda env create -f environment.yml
+### Critical Findings
+- **Bias Violations Detected**: Department and salary-based discrimination identified
+- **Security Risk Level**: CRITICAL (45/100 score) - immediate attention required
+- **Framework Status**: Complete ethical guidelines and implementation plan established
 
-# 2) Activate it
-conda activate pawn
-
-# 3) Run the pipeline
-make eda         # writes data/silver/hr_silver.parquet + figs/class_balance.png, figs/anomaly_rate.png
-make features    # writes data/gold/hr_emp_gold.parquet and/or data/gold/hr_dept_gold.parquet (or hr_gold.parquet)
-make train_xgb   # writes models/xgb.json + figs/xgb_convergence.png
-make train_iforest  # writes models/iforest.joblib
-make eval        # writes results/experiments/thresholds.json (cost-aware τ)
-make bench       # writes results/experiments/benchmark.csv
-make dashboard   # launches Streamlit  If you prefer not to activate the env in your shell, prefix with conda run -n pawn …. (reads Gold + Results)
-```
+Run `python scripts/bias_monitoring.py` and `python scripts/security_audit.py` for detailed assessments.

@@ -1,0 +1,163 @@
+{
+  "timestamp": "2025-09-10T20:57:37.770402",
+  "department_fairness": {
+    "demographic_parity": {
+      "IT": {
+        "positive_rate": 0.16494845360824742,
+        "parity_difference": 0.008194701523756037,
+        "sample_size": 291
+      },
+      "RandD": {
+        "positive_rate": 0.13592233009708737,
+        "parity_difference": 0.02083142198740401,
+        "sample_size": 206
+      },
+      "accounting": {
+        "positive_rate": 0.19047619047619047,
+        "parity_difference": 0.03372243839169908,
+        "sample_size": 189
+      },
+      "hr": {
+        "positive_rate": 0.15934065934065933,
+        "parity_difference": 0.0025869072561679474,
+        "sample_size": 182
+      },
+      "management": {
+        "positive_rate": 0.09900990099009901,
+        "parity_difference": 0.05774385109439237,
+        "sample_size": 101
+      },
+      "marketing": {
+        "positive_rate": 0.11602209944751381,
+        "parity_difference": 0.040731652636977575,
+        "sample_size": 181
+      },
+      "product_mng": {
+        "positive_rate": 0.1477832512315271,
+        "parity_difference": 0.008970500852964275,
+        "sample_size": 203
+      },
+      "sales": {
+        "positive_rate": 0.16069600818833163,
+        "parity_difference": 0.003942256103840247,
+        "sample_size": 977
+      },
+      "support": {
+        "positive_rate": 0.15251299826689774,
+        "parity_difference": 0.0042407538175936454,
+        "sample_size": 577
+      },
+      "technical": {
+        "positive_rate": 0.16931982633863965,
+        "parity_difference": 0.012566074254148268,
+        "sample_size": 691
+      }
+    },
+    "equalized_odds": {
+      "IT": {
+        "true_positive_rate": 0.9,
+        "false_positive_rate": 0.012448132780082987,
+        "accuracy": 0.9725085910652921
+      },
+      "RandD": {
+        "true_positive_rate": 0.9032258064516129,
+        "false_positive_rate": 0.0,
+        "accuracy": 0.9854368932038835
+      },
+      "accounting": {
+        "true_positive_rate": 0.9230769230769231,
+        "false_positive_rate": 0.0,
+        "accuracy": 0.9841269841269841
+      },
+      "hr": {
+        "true_positive_rate": 0.9333333333333333,
+        "false_positive_rate": 0.006578947368421052,
+        "accuracy": 0.9835164835164835
+      },
+      "management": {
+        "true_positive_rate": 0.9090909090909091,
+        "false_positive_rate": 0.0,
+        "accuracy": 0.9900990099009901
+      },
+      "marketing": {
+        "true_positive_rate": 0.84,
+        "false_positive_rate": 0.0,
+        "accuracy": 0.9779005524861878
+      },
+      "product_mng": {
+        "true_positive_rate": 0.9354838709677419,
+        "false_positive_rate": 0.005813953488372093,
+        "accuracy": 0.9852216748768473
+      },
+      "sales": {
+        "true_positive_rate": 0.9444444444444444,
+        "false_positive_rate": 0.0049079754601227,
+        "accuracy": 0.9866939611054247
+      },
+      "support": {
+        "true_positive_rate": 0.8673469387755102,
+        "false_positive_rate": 0.006263048016701462,
+        "accuracy": 0.9722703639514731
+      },
+      "technical": {
+        "true_positive_rate": 0.8968253968253969,
+        "false_positive_rate": 0.007079646017699115,
+        "accuracy": 0.975397973950796
+      }
+    },
+    "overall_metrics": {
+      "accuracy": 0.980266814897165,
+      "positive_rate": 0.15675375208449138,
+      "base_rate": 0.16759310728182322
+    },
+    "max_parity_difference": 0.05774385109439237,
+    "fairness_violation": true
+  },
+  "salary_fairness": {
+    "demographic_parity": {
+      "high": {
+        "positive_rate": 0.050359712230215826,
+        "parity_difference": 0.10639403985427556,
+        "sample_size": 278
+      },
+      "low": {
+        "positive_rate": 0.1906158357771261,
+        "parity_difference": 0.033862083692634715,
+        "sample_size": 1705
+      },
+      "medium": {
+        "positive_rate": 0.1393188854489164,
+        "parity_difference": 0.017434866635574975,
+        "sample_size": 1615
+      }
+    },
+    "equalized_odds": {
+      "high": {
+        "true_positive_rate": 0.7647058823529411,
+        "false_positive_rate": 0.0038314176245210726,
+        "accuracy": 0.9820143884892086
+      },
+      "low": {
+        "true_positive_rate": 0.9031339031339032,
+        "false_positive_rate": 0.005908419497784343,
+        "accuracy": 0.975366568914956
+      },
+      "medium": {
+        "true_positive_rate": 0.9276595744680851,
+        "false_positive_rate": 0.005072463768115942,
+        "accuracy": 0.9851393188854489
+      }
+    },
+    "overall_metrics": {
+      "accuracy": 0.980266814897165,
+      "positive_rate": 0.15675375208449138,
+      "base_rate": 0.16759310728182322
+    },
+    "max_parity_difference": 0.10639403985427556,
+    "fairness_violation": true
+  },
+  "recommendations": [
+    "ALERT: Department bias detected. Max parity difference: 0.058",
+    "ALERT: Salary-based bias detected. Max parity difference: 0.106"
+  ]
+}

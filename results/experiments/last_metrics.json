@@ -1,3 +1,7 @@
 {
-    "optimal_threshold": 0.19191919191919193
+    "optimal_threshold": 0.09,
+    "fusion_lr_threshold": 0.07,
+    "naive_fusion_cost": 2000,
+    "learned_fusion_cost": 1960,
+    "cost_fn": "10*FN + 1*FP"
 }

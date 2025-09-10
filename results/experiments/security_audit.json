@@ -1,0 +1,225 @@
+{
+  "security_score": 45,
+  "risk_level": "CRITICAL",
+  "audit_results": {
+    "timestamp": "2025-09-10T20:58:06.763451",
+    "data_encryption": {
+      "data/silver/hr_silver.parquet": {
+        "size_bytes": 56540,
+        "is_sensitive": true,
+        "needs_encryption": true
+      },
+      "data/gold/hr_dept_gold.parquet": {
+        "size_bytes": 45613,
+        "is_sensitive": true,
+        "needs_encryption": true
+      },
+      "data/gold/hr_gold.parquet": {
+        "size_bytes": 245125,
+        "is_sensitive": true,
+        "needs_encryption": true
+      },
+      "data/gold/hr_emp_gold.parquet": {
+        "size_bytes": 265805,
+        "is_sensitive": true,
+        "needs_encryption": true
+      },
+      "results/experiments/dpi_leaderboard.csv": {
+        "size_bytes": 1116,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "results/experiments/benchmark_enhanced.csv": {
+        "size_bytes": 401,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "results/experiments/benchmark.csv": {
+        "size_bytes": 361,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "results/experiments/xgb_cv_metrics.csv": {
+        "size_bytes": 174,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "data/raw/HR_comma_sep.csv": {
+        "size_bytes": 566785,
+        "is_sensitive": true,
+        "needs_encryption": true
+      },
+      "models/xgb.json": {
+        "size_bytes": 234814,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "models/baseline/xgb_baseline.json": {
+        "size_bytes": 260449,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "models/enhanced/xgb_cost_sensitive.json": {
+        "size_bytes": 335806,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "models/enhanced/xgb.json": {
+        "size_bytes": 335806,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "results/experiments/last_metrics.json": {
+        "size_bytes": 161,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "results/experiments/bias_assessment.json": {
+        "size_bytes": 4936,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "results/experiments/xgb_params.json": {
+        "size_bytes": 239,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "configs/eval/hdfs_phase4.json": {
+        "size_bytes": 334,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "models/fusion_scaler.joblib": {
+        "size_bytes": 1103,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "models/fusion_lr.joblib": {
+        "size_bytes": 895,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "models/logreg.joblib": {
+        "size_bytes": 2385,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "models/xgb_calibrated.joblib": {
+        "size_bytes": 1456211,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "models/iforest_dept.joblib": {
+        "size_bytes": 957005,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "models/baseline/logreg_baseline.joblib": {
+        "size_bytes": 2385,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "models/enhanced/fusion_scaler.joblib": {
+        "size_bytes": 1103,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "models/enhanced/fusion_lr.joblib": {
+        "size_bytes": 895,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "models/enhanced/xgb_calibrated.joblib": {
+        "size_bytes": 912224,
+        "is_sensitive": false,
+        "needs_encryption": false
+      },
+      "models/enhanced/fusion_learned.joblib": {
+        "size_bytes": 895,
+        "is_sensitive": false,
+        "needs_encryption": false
+      }
+    },
+    "access_controls": {
+      "env_files_found": [
+        ".env.example"
+      ],
+      "gitignore_exists": true,
+      "secrets_in_code": {
+        "scripts/stream_demo.py": [
+          "key"
+        ],
+        "scripts/security_audit.py": [
+          "password",
+          "secret",
+          "key",
+          "token",
+          "api_key",
+          "private_key",
+          "credential",
+          "auth"
+        ]
+      },
+      "file_permissions": {
+        "models/xgb.json": {
+          "mode": "644",
+          "is_secure": true
+        },
+        "models/baseline/xgb_baseline.json": {
+          "mode": "644",
+          "is_secure": true
+        },
+        "models/enhanced/xgb_cost_sensitive.json": {
+          "mode": "644",
+          "is_secure": true
+        },
+        "models/enhanced/xgb.json": {
+          "mode": "644",
+          "is_secure": true
+        },
+        "results/experiments/last_metrics.json": {
+          "mode": "644",
+          "is_secure": true
+        }
+      }
+    }
+  },
+  "recommendations": [
+    {
+      "priority": "HIGH",
+      "category": "Data Protection",
+      "issue": "5 sensitive data files need encryption",
+      "action": "Implement AES-256 encryption for all HR data files"
+    },
+    {
+      "priority": "CRITICAL",
+      "category": "Secret Management",
+      "issue": "Potential secrets found in code",
+      "action": "Move all secrets to environment variables or secure vault"
+    },
+    {
+      "priority": "HIGH",
+      "category": "Authentication",
+      "issue": "No multi-factor authentication implemented",
+      "action": "Implement MFA for all system access"
+    },
+    {
+      "priority": "HIGH",
+      "category": "Monitoring",
+      "issue": "No security monitoring in place",
+      "action": "Deploy SIEM solution for security event monitoring"
+    },
+    {
+      "priority": "MEDIUM",
+      "category": "Network Security",
+      "issue": "No network segmentation documented",
+      "action": "Implement network segmentation for ML pipeline"
+    }
+  ],
+  "summary": {
+    "total_recommendations": 5,
+    "critical_issues": 1,
+    "high_priority_issues": 3,
+    "sensitive_files_count": 5
+  }
+}
