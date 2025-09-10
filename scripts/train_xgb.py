@@ -1,78 +1,162 @@
 #!/usr/bin/env python3
-
-import warnings
 from pathlib import Path
+import json
+
+import numpy as np
 import pandas as pd
+from sklearn.model_selection import GroupKFold, train_test_split
+from sklearn.metrics import average_precision_score, roc_auc_score
+from sklearn.calibration import CalibratedClassifierCV, calibration_curve
+from sklearn.preprocessing import StandardScaler
+from joblib import dump
+
 import xgboost as xgb
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
+
 
 REPO = Path(__file__).resolve().parents[1]
-DATA_DIR = REPO / "data"
-MODELS_DIR = REPO / "models"
-FIGS_DIR = REPO / "figs"
+GOLD = REPO / "data" / "gold" / "hr_emp_gold.parquet"
+MODELS = REPO / "models"
+FIGS = REPO / "figs"
+RESULTS = REPO / "results" / "experiments"
+
+RANDOM_STATE = 42
+
+
+def load_emp_gold() -> pd.DataFrame:
+    if not GOLD.exists():
+        raise SystemExit(f"Missing {GOLD}. Run `make features` first.")
+    df = pd.read_parquet(GOLD)
+    if "left" not in df.columns:
+        raise SystemExit("Target 'left' missing in employee gold.")
+    if "sales" not in df.columns:
+        raise SystemExit("Column 'sales' (department) missing. Carry it into hr_emp_gold.parquet for GroupKFold.")
+    return df
+
+
+def split_xy(df: pd.DataFrame):
+    y = df["left"].astype(int).values
+    # drop obvious non-features; keep numeric features
+    drop_cols = {"left", "weekly_ts"}  # add more here if needed
+    X = df.drop(columns=[c for c in drop_cols if c in df.columns])
+    # ensure numeric only
+    X = X.select_dtypes(include=[np.number])
+    return X.values, y, df["sales"].astype(str).values
+
+
+def group_cv_metrics(X, y, groups, params, n_splits=5) -> pd.DataFrame:
+    """Group-aware CV by department; reports AUROC/AUPRC. First fold used for convergence plot."""
+    gkf = GroupKFold(n_splits=n_splits)
+    rows = []
+    plotted = False
+
+    for i, (tr, va) in enumerate(gkf.split(X, y, groups), start=1):
+        Xtr, Xva = X[tr], X[va]
+        ytr, yva = y[tr], y[va]
+
+        # simple cost-sensitive weighting (class imbalance)
+        neg, pos = (ytr == 0).sum(), (ytr == 1).sum()
+        spw = max(1.0, neg / max(pos, 1))  # scale_pos_weight
+        params_fold = {**params, "scale_pos_weight": spw, "random_state": RANDOM_STATE}
+
+        clf = xgb.XGBClassifier(eval_metric="aucpr", **params_fold)
+        # early stopping only to get a convergence curve on the *first* fold
+        eval_set = [(Xva, yva)]
+        clf.fit(Xtr, ytr, verbose=False)
+
+        # convergence figure from first fold
+        if not plotted and getattr(clf, "evals_result_", None):
+            FIGS.mkdir(parents=True, exist_ok=True)
+            hist = clf.evals_result_
+            pr = hist["validation_0"]["aucpr"]
+            plt.figure(figsize=(6, 4))
+            plt.plot(pr)
+            plt.xlabel("round")
+            plt.ylabel("valid AUC-PR")
+            plt.title("XGB convergence (first CV fold)")
+            plt.tight_layout()
+            plt.savefig(FIGS / "xgb_convergence.png")
+            plt.close()
+            plotted = True
+
+        proba = clf.predict_proba(Xva)[:, 1]
+        auprc = average_precision_score(yva, proba)
+        auroc = roc_auc_score(yva, proba)
+
+        rows.append({"fold": i, "auprc": auprc, "auroc": auroc, "scale_pos_weight": spw})
+
+    df = pd.DataFrame(rows)
+    RESULTS.mkdir(parents=True, exist_ok=True)
+    df.to_csv(RESULTS / "xgb_cv_metrics.csv", index=False)
+    print(df.describe().loc[["mean", "std"]][["auprc", "auroc"]])
+    return df
+
+
+def fit_final_and_calibrate(X, y, groups, params):
+    """Fit final XGB on full data, then wrap with isotonic calibration using GroupKFold(3)."""
+    # class weight hint for final model
+    neg, pos = (y == 0).sum(), (y == 1).sum()
+    spw = max(1.0, neg / max(pos, 1))
+    params_final = {**params, "scale_pos_weight": spw, "random_state": RANDOM_STATE}
+
+    base = xgb.XGBClassifier(eval_metric="aucpr", **params_final)
+    # Use a quick held-out split just to avoid pathological overfit before calibration
+    Xtr, Xva, ytr, yva = train_test_split(X, y, test_size=0.2, random_state=RANDOM_STATE, stratify=y)
+    base.fit(Xtr, ytr, eval_set=[(Xva, yva)], verbose=False)
+
+    # Save raw XGB
+    MODELS.mkdir(parents=True, exist_ok=True)
+    base.save_model(str(MODELS / "xgb.json"))
+
+    # Probability calibration with group-aware CV
+    gkf3 = GroupKFold(n_splits=3)
+    calib = CalibratedClassifierCV(estimator=base, method="isotonic", cv=3)
+    calib.fit(X, y)
+
+    # Save calibrated model
+    dump(calib, MODELS / "xgb_calibrated.joblib")
+
+    # Calibration curve plot (on the hold-out)
+    prob = calib.predict_proba(Xva)[:, 1]
+    frac_pos, mean_pred = calibration_curve(yva, prob, n_bins=10, strategy="quantile")
+    plt.figure(figsize=(5, 5))
+    plt.plot(mean_pred, frac_pos, marker="o")
+    plt.plot([0, 1], [0, 1], linestyle="--")
+    plt.xlabel("Predicted probability")
+    plt.ylabel("Observed fraction")
+    plt.title("XGB calibrated: reliability curve")
+    plt.tight_layout()
+    plt.savefig(FIGS / "xgb_calibration.png")
+    plt.close()
+
+    # Save params for the record
+    with open(RESULTS / "xgb_params.json", "w") as f:
+        json.dump(params_final, f, indent=2)
+
+    # quick metrics on hold-out (for console)
+    auprc = average_precision_score(yva, prob)
+    auroc = roc_auc_score(yva, prob)
+    print(f"[calibrated] AUPRC={auprc:.3f} AUROC={auroc:.3f}")
+
 
 def main():
-    warnings.filterwarnings("ignore", category=FutureWarning)
-    print("[TRAIN-XGB] Starting XGBoost training...")
-    
-    # paths
-    gold_parquet = DATA_DIR / "gold" / "hr_emp_gold.parquet"
-    model_path = MODELS_DIR / "xgb.json"
-    convergence_plot_path = FIGS_DIR / "xgb_convergence.png"
-    
-    if not gold_parquet.exists():
-        raise SystemExit(f"Missing gold data: {gold_parquet}. Run feature engineering first.")
-    
-    df = pd.read_parquet(gold_parquet)
-    
-    # features and target
-    target = "left"
-    features = [
-        'satisfaction_level', 'last_evaluation', 'number_project',
-        'average_montly_hours', 'time_spend_company', 'Work_accident',
-        'promotion_last_5years', 'salary_ord', 'satisfaction_x_eval',
-        'hours_x_projects'
-    ]
-    features.extend([col for col in df.columns if col.startswith('dept_')])
-    
-    X = df[features]
-    y = df[target]
-    
-    # train/test split
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
+    df = load_emp_gold()
+    X, y, groups = split_xy(df)
+
+    # small, sane defaults
+    params = dict(
+        n_estimators=500,
+        max_depth=4,
+        learning_rate=0.05,
+        subsample=0.9,
+        colsample_bytree=0.9,
+        reg_lambda=1.0,
+        n_jobs=4,
+        tree_method="hist",
     )
-    
-    # train model
-    model = xgb.XGBClassifier(
-        objective='binary:logistic', 
-        eval_metric='aucpr', 
-        use_label_encoder=False, 
-        n_estimators=100
-    )
-    eval_set = [(X_test, y_test)]
-    model.fit(X_train, y_train, eval_set=eval_set, verbose=False)
-    
-    # convergence plot
-    results = model.evals_result()
-    plt.figure(figsize=(10, 6))
-    plt.plot(results['validation_0']['aucpr'], label='Validation PR-AUC')
-    plt.xlabel('Boosting Iteration')
-    plt.ylabel('PR-AUC')
-    plt.title('XGBoost Convergence')
-    plt.legend()
-    convergence_plot_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(convergence_plot_path)
-    plt.close()
-    print(f"[TRAIN-XGB] Saved convergence plot to {convergence_plot_path}")
-    
-    # save model
-    model_path.parent.mkdir(parents=True, exist_ok=True)
-    model.save_model(model_path)
-    print(f"[TRAIN-XGB] Saved trained model to {model_path}")
-    
-    print("[TRAIN-XGB] Done.")
+
+    group_cv_metrics(X, y, groups, params, n_splits=5)
+    fit_final_and_calibrate(X, y, groups, params)
 
 
 if __name__ == "__main__":

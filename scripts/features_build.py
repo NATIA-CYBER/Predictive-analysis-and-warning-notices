@@ -88,6 +88,19 @@ def main():
     
     df_merged = pd.merge(df, df_dept_week, on=["sales", "weekly_ts"], how="left")
     df_emp_gold = build_employee_features(df_merged)
+    
+    # keep department label for GroupKFold and dashboard
+    if "sales" in df.columns:
+        dept_series = df["sales"]
+    elif "Department" in df.columns:
+        dept_series = df["Department"]
+    else:
+        raise SystemExit("Department column missing: expected 'sales' or 'Department'.")
+    
+    # ensure row alignment with emp_df
+    df_emp_gold = df_emp_gold.copy()
+    df_emp_gold["sales"] = dept_series.astype(str).values
+    
     emp_gold_parquet.parent.mkdir(parents=True, exist_ok=True)
     df_emp_gold.to_parquet(emp_gold_parquet, index=False)
     print(f"[FEAT] Saved employee-level gold data → {emp_gold_parquet}")
